@@ -6,8 +6,6 @@ re_url_safe = re.compile("[^A-Za-z0-9_]")
 separator = "_ANY_STRING_WILL_DO_AS_A_SEPARATOR"
 encoded_doc_template = """/*
 Content-Type: multipart/related; boundary="%s"
-
-%%(mhtml_items)s
 */
 
 %%(css_items)s
@@ -19,8 +17,10 @@ Content-Transfer-Encoding:base64
 %%(b64)s
 """ % separator
 
-css_item_template = """
-.%(safe_name)s {
+css_item_template = """.%(safe_name)s {
+/*
+%(mhtml)s
+*/
 background: url(data:%(mime)s;base64,%(b64)s);
 *background: url(mhtml:%%(url_path)s!%(safe_name)s);
 height: %(height)s;
@@ -60,6 +60,8 @@ class Image(dict):
                 
             self['width'] = width
             self['height'] = height
+            
+            self['mhtml'] = self.mhtml()
             self.encoded = True
         
     def mhtml(self):
@@ -95,7 +97,6 @@ class ImageIndex(object):
         for image in self.images:
             image.encode()
         return (encoded_doc_template % {
-                                     'mhtml_items': '\n'.join(image.mhtml() for image in self.images),
                                      'css_items': '\n'.join(image.css() for image in self.images),
                                      }) % {'url_path': url_path, }
 
