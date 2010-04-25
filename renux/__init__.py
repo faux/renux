@@ -2,12 +2,6 @@ import os
 import base64
 import re
 
-try:
-    from javax.imageio import ImageIO
-    from java.io import File
-except:
-    from PIL import Image as PILImage
-
 re_url_safe = re.compile("[^A-Za-z0-9_]")
 separator = "_ANY_STRING_WILL_DO_AS_A_SEPARATOR"
 encoded_doc_template = """/*
@@ -34,6 +28,22 @@ width: %(width)s;
 }
 """
 
+
+def get_image_size(path):
+    try:
+        from javax.imageio import ImageIO
+        from java.io import File
+        img = ImageIO.read(File(path))
+        width = img.getWidth()
+        height = img.getHeight()
+    except ImportError:
+        from PIL import Image as PILImage
+        img = PILImage.open(path)
+        width, height = img.size
+        
+    return width, height
+
+
 class Image(dict):
     def __init__(self, **kwargs):
         super(Image, self).__init__(**kwargs)
@@ -47,13 +57,7 @@ class Image(dict):
             self['b64'] = base64.b64encode(img.read())
             img.close()
             
-            try:
-                img = ImageIO.read(File(self['path']))
-                width = img.getWidth()
-                height = img.getHeight()
-            except NameError:
-                img = PILImage.open(self['path'])
-                width, height = img.size
+            width, height = get_image_size(self['path'])
                 
             self['width'] = width
             self['height'] = height
@@ -88,9 +92,6 @@ class ImageIndex(object):
                     img = Image(path=img_path, mime=mime, filename=filename)
                     self.images.append(img)
         
-    def getimages(self):
-        return self.images
-    
     def encode(self, url_path):
         for image in self.images:
             image.encode()
