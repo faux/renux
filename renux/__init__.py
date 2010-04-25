@@ -5,12 +5,8 @@ import re
 try:
     from javax.imageio import ImageIO
     from java.io import File
-    jython = True
 except:
-    jython = False
     from PIL import Image as PILImage
-    
-        
 
 re_url_safe = re.compile("[^A-Za-z0-9_]")
 separator = "_ANY_STRING_WILL_DO_AS_A_SEPARATOR"
@@ -51,14 +47,14 @@ class Image(dict):
             self['b64'] = base64.b64encode(img.read())
             img.close()
             
-            if jython:
+            try:
                 img = ImageIO.read(File(self['path']))
                 width = img.getWidth()
                 height = img.getHeight()
-            else:
-                print dir(Image)
+            except NameError:
                 img = PILImage.open(self['path'])
                 width, height = img.size
+                
             self['width'] = width
             self['height'] = height
             self.encoded = True
