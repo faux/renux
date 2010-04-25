@@ -99,3 +99,40 @@ class ImageIndex(object):
                                      'mhtml_items': '\n'.join(image.mhtml() for image in self.images),
                                      'css_items': '\n'.join(image.css() for image in self.images),
                                      }) % {'url_path': url_path,}
+
+def test_server(img_index):
+    import BaseHTTPServer
+    server_class=BaseHTTPServer.HTTPServer
+    encoded_imgs = img_index.encode("/images.css")
+    class renux_server(BaseHTTPServer.BaseHTTPRequestHandler):
+        def do_GET(self):
+            if self.path == "/images.css":
+                self.send_response(200)
+                self.send_header("Content-type", "text/css")
+                self.send_header("Content-Length", len(encoded_imgs))
+                self.end_headers()
+                self.wfile.write(encoded_imgs)
+            elif self.path == "/":
+                html_images = []
+                for img in img_index.images:
+                    html_images.append("""
+                    <h1>%(filename)s</h1>
+                    <div class="%(safe_name)s"></div>
+                    """ % img)
+                html_page = """
+                <html>
+                    <head><link rel="stylesheet" href="/images.css" type="text/css"/></head>
+                    <body>%s</body>
+                </html>""" % "\n".join(html_images)
+                self.send_response(200)
+                self.send_header("Content-type", "text/html")
+                self.send_header("Content-Length", len(html_page))
+                self.end_headers()
+                self.wfile.write(html_page)
+            else:
+                self.send_response(404)
+                self.end_headers()
+    handler_class=renux_server
+    server_address = ('', 8000)
+    httpd = server_class(server_address, handler_class)
+    httpd.serve_forever()
