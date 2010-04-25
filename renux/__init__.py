@@ -28,7 +28,6 @@ width: %(width)s;
 }
 """
 
-
 def get_image_size(path):
     try:
         from javax.imageio import ImageIO
@@ -98,12 +97,12 @@ class ImageIndex(object):
         return (encoded_doc_template % {
                                      'mhtml_items': '\n'.join(image.mhtml() for image in self.images),
                                      'css_items': '\n'.join(image.css() for image in self.images),
-                                     }) % {'url_path': url_path,}
+                                     }) % {'url_path': url_path, }
 
 def test_server(img_index):
     import BaseHTTPServer
     import zlib
-    server_class=BaseHTTPServer.HTTPServer
+    server_class = BaseHTTPServer.HTTPServer
     encoded_imgs = img_index.encode("/images.css")
     uncompressed_size = len(encoded_imgs)
     encoded_imgs = zlib.compress(encoded_imgs)
@@ -138,7 +137,7 @@ def test_server(img_index):
             else:
                 self.send_response(404)
                 self.end_headers()
-    handler_class=renux_server
+    handler_class = renux_server
     server_address = ('127.0.0.1', 8000)
     httpd = server_class(server_address, handler_class)
     print "server started: http://%s:%i/" % server_address
