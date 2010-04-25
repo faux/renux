@@ -10,6 +10,8 @@ Content-Type: multipart/related; boundary="%s"
 
 %%(mhtml_items)s
 */
+
+%%(css_items)s
 """ % separator
 mhtml_item_template = """--%s
 Content-Location:%%(safe_name)s
@@ -18,10 +20,20 @@ Content-Transfer-Encoding:base64
 %%(b64)s
 """ % separator
 
+css_item_template = """
+.%(safe_name)s {
+background: url(data:%(mime)s;base64,%(b64)s);
+*background: url(mhtml:http://faux.devio.us/mhtml/install.css!%(safe_name)s);
+height: 157;
+width: 600;
+}
+"""
+
 class Image(dict):
     def __init__(self, **kwargs):
         super(Image, self).__init__(**kwargs)
         self['safe_name'] = re_url_safe.sub("_", self['filename'])
+        self.encoded = False
         
             
     def encode(self):
@@ -33,6 +45,9 @@ class Image(dict):
         
     def mhtml(self):
         return mhtml_item_template % self
+    
+    def css(self):
+        return css_item_template % self
 
 class ImageIndex(object):
     '''
@@ -66,9 +81,7 @@ class ImageIndex(object):
             
     def mhtml(self):
         self.encode()
-        return mhtml_doc_template % {'mhtml_items': '\n'.join(image.mhtml() for image in self.images)}    
-    
-            
-            
-            
-            
+        return mhtml_doc_template % {
+                                     'mhtml_items': '\n'.join(image.mhtml() for image in self.images),
+                                     'css_items': '\n'.join(image.css() for image in self.images),
+                                     }
