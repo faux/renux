@@ -25,9 +25,11 @@ class Image(dict):
         
             
     def encode(self):
-        img = open(self['path'], "rb")
-        self['b64'] = base64.b64encode(img.read())
-        img.close()
+        if not self.encoded:
+            img = open(self['path'], "rb")
+            self['b64'] = base64.b64encode(img.read())
+            img.close()
+            self.encoded = True
         
     def mhtml(self):
         return mhtml_item_template % self
