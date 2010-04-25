@@ -2,10 +2,19 @@ import os
 import base64
 import re
 
+try:
+    from javax.imageio import ImageIO
+    from java.io import File
+    jython = True
+except:
+    jython = False
+    from PIL import Image as PILImage
+    
+        
 
 re_url_safe = re.compile("[^A-Za-z0-9_]")
 separator = "_ANY_STRING_WILL_DO_AS_A_SEPARATOR"
-mhtml_doc_template = """/*
+encoded_doc_template = """/*
 Content-Type: multipart/related; boundary="%s"
 
 %%(mhtml_items)s
@@ -23,9 +32,9 @@ Content-Transfer-Encoding:base64
 css_item_template = """
 .%(safe_name)s {
 background: url(data:%(mime)s;base64,%(b64)s);
-*background: url(mhtml:http://faux.devio.us/mhtml/install.css!%(safe_name)s);
-height: 157;
-width: 600;
+*background: url(mhtml:%%(url_path)s!%(safe_name)s);
+height: %(height)s;
+width: %(width)s;
 }
 """
 
@@ -41,6 +50,17 @@ class Image(dict):
             img = open(self['path'], "rb")
             self['b64'] = base64.b64encode(img.read())
             img.close()
+            
+            if jython:
+                img = ImageIO.read(File(self['path']))
+                width = img.getWidth()
+                height = img.getHeight()
+            else:
+                print dir(Image)
+                img = PILImage.open(self['path'])
+                width, height = img.size
+            self['width'] = width
+            self['height'] = height
             self.encoded = True
         
     def mhtml(self):
@@ -75,13 +95,10 @@ class ImageIndex(object):
     def getimages(self):
         return self.images
     
-    def encode(self, format_name=None):
+    def encode(self, url_path):
         for image in self.images:
             image.encode()
-            
-    def mhtml(self):
-        self.encode()
-        return mhtml_doc_template % {
+        return (encoded_doc_template % {
                                      'mhtml_items': '\n'.join(image.mhtml() for image in self.images),
                                      'css_items': '\n'.join(image.css() for image in self.images),
-                                     }
+                                     }) % {'url_path': url_path,}
