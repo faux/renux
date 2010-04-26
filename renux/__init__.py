@@ -100,13 +100,29 @@ class ImageIndex(object):
                                      'css_items': '\n'.join(image.css() for image in self.images),
                                      }) % {'url_path': url_path, }
 
+def fix_newline(string):
+    import StringIO
+    out_string = StringIO.StringIO()
+    for i in xrange(len(string)):
+        if string[i] == '\n':
+            out_string.write('\r\n')
+        else:
+            out_string.write(string[i])
+    return out_string.getvalue()
+
 def test_server(img_index):
     import BaseHTTPServer
     import zlib
+    import socket
+    
+    server_ip = socket.gethostbyname(socket.gethostname())
+    server_url = "http://" + server_ip + ":8000/"
     server_class = BaseHTTPServer.HTTPServer
-    encoded_imgs = img_index.encode("/images.css")
+    encoded_imgs = img_index.encode(server_url + "images.css")
+    encoded_imgs = fix_newline(encoded_imgs)
     uncompressed_size = len(encoded_imgs)
     encoded_imgs = zlib.compress(encoded_imgs)
+    
     class renux_server(BaseHTTPServer.BaseHTTPRequestHandler):
         def do_GET(self):
             if self.path == "/images.css":
@@ -139,9 +155,9 @@ def test_server(img_index):
                 self.send_response(404)
                 self.end_headers()
     handler_class = renux_server
-    server_address = ('127.0.0.1', 8000)
+    server_address = (server_ip, 8000)
     httpd = server_class(server_address, handler_class)
-    print "server started: http://%s:%i/" % server_address
+    print "serving on:", server_url
     print "uncompressed:", uncompressed_size
     print "  compressed:", len(encoded_imgs)
     httpd.serve_forever()
