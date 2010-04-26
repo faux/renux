@@ -1,6 +1,6 @@
-import renux
+from renux import ImageIndex, test_server
 
 if __name__ == '__main__':
-    ii = renux.ImageIndex()
+    ii = ImageIndex.new()
     ii.addpath(".")
-    renux.test_server(ii)
+    test_server.start(ii)
