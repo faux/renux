@@ -124,10 +124,12 @@ def test_server(img_index):
     
     class renux_server(BaseHTTPServer.BaseHTTPRequestHandler):
         def do_GET(self):
+            content_encoding = "deflate" if self.headers['User-Agent'].find("MSIE") == -1 else "gzip"
+            
             if self.path == "/images.css":
                 self.send_response(200)
-                self.send_header("Content-Encoding", "deflate")
-                self.send_header("Content-type", "text/css")
+                self.send_header("Content-Encoding", content_encoding)
+                self.send_header("Content-Type", "text/css")
                 self.send_header("Content-Length", len(encoded_imgs))
                 self.send_header("Expires", "Fri, 30 Oct 1998 14:19:41 GMT")
                 self.send_header("Cache-Control", "max-age=0, must-revalidate")
@@ -147,8 +149,8 @@ def test_server(img_index):
                 </html>""" % "\n".join(html_images)
                 html_page = zlib.compress(html_page)
                 self.send_response(200)
-                self.send_header("Content-Encoding", "deflate")
-                self.send_header("Content-type", "text/html")
+                self.send_header("Content-Encoding", content_encoding)
+                self.send_header("Content-Type", "text/html")
                 self.send_header("Content-Length", len(html_page))
                 self.send_header("Expires", "Fri, 30 Oct 1998 14:19:41 GMT")
                 self.send_header("Cache-Control", "max-age=0, must-revalidate")
