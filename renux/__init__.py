@@ -14,15 +14,14 @@ mhtml_item_template = """--%s
 Content-Location:%%(safe_name)s
 Content-Transfer-Encoding:base64
 
-%%(b64)s
-""" % separator
+%%(b64)s""" % separator
 
 css_item_template = """.%(safe_name)s {
 /*
 %(mhtml)s
 */
-background: url(data:%(mime)s;base64,%(b64)s);
-*background: url(mhtml:%%(url_path)s!%(safe_name)s);
+background-image: url("data:%(mime)s;base64,%(b64)s");
+*background-image: url(mhtml:%%(url_path)s!%(safe_name)s);
 height: %(height)s;
 width: %(width)s;
 }
@@ -130,6 +129,8 @@ def test_server(img_index):
                 self.send_header("Content-Encoding", "deflate")
                 self.send_header("Content-type", "text/css")
                 self.send_header("Content-Length", len(encoded_imgs))
+                self.send_header("Expires", "Fri, 30 Oct 1998 14:19:41 GMT")
+                self.send_header("Cache-Control", "max-age=0, must-revalidate")
                 self.end_headers()
                 self.wfile.write(encoded_imgs)
             elif self.path == "/":
@@ -139,7 +140,7 @@ def test_server(img_index):
                     <h1>%(filename)s</h1>
                     <div class="%(safe_name)s"></div>
                     """ % img)
-                html_page = """
+                html_page = """<!DOCTYPE html> 
                 <html>
                     <head><link rel="stylesheet" href="/images.css" type="text/css"/></head>
                     <body>%s</body>
@@ -149,6 +150,8 @@ def test_server(img_index):
                 self.send_header("Content-Encoding", "deflate")
                 self.send_header("Content-type", "text/html")
                 self.send_header("Content-Length", len(html_page))
+                self.send_header("Expires", "Fri, 30 Oct 1998 14:19:41 GMT")
+                self.send_header("Cache-Control", "max-age=0, must-revalidate")
                 self.end_headers()
                 self.wfile.write(html_page)
             else:
