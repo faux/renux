@@ -3,6 +3,7 @@ import base64
 import re
 
 re_url_safe = re.compile("[^A-Za-z0-9_]")
+re_drop_ext = re.compile("\.\w+$")
 separator = "_ANY_STRING_WILL_DO_AS_A_SEPARATOR"
 encoded_doc_template = """/*
 Content-Type: multipart/related; boundary="%s"
@@ -16,18 +17,16 @@ Content-Transfer-Encoding:base64
 
 %%(b64)s""" % separator
 
-css_item_template = """.%(safe_name)s {
-/*
+css_item_template = """.%(safe_name)s {/*
 %(mhtml)s
 */
 background-image: url("data:%(mime)s;base64,%(b64)s");
 *background-image: url(mhtml:%%(url_path)s!%(safe_name)s);
-height: %(height)s;
-width: %(width)s;
-}
-"""
+%(custom_css)s
+}"""
 
-def get_image_size(path):
+def get_image_size(image):
+    path = image['path']
     try:
         from javax.imageio import ImageIO
         from java.io import File
@@ -38,27 +37,28 @@ def get_image_size(path):
         from PIL import Image as PILImage
         img = PILImage.open(path)
         width, height = img.size
-        
-    return width, height
+    
+    image['custom_css'] += "height:%(height)spx;width:%(width)spx;" % {'width': width, 'height': height}
 
+def get_safe_name(image):
+    return re_url_safe.sub("_", re_drop_ext.sub("", image['filename']))
 
 class Image(dict):
     def __init__(self, **kwargs):
         super(Image, self).__init__(**kwargs)
-        self['safe_name'] = re_url_safe.sub("_", self['filename'])
+        self['safe_name'] = get_safe_name(self)
+        self['custom_css'] = ''
         self.encoded = False
-        
             
-    def encode(self):
+    def encode(self, custom_method=None):
         if not self.encoded:
             img = open(self['path'], "rb")
             self['b64'] = base64.b64encode(img.read())
             img.close()
             
-            width, height = get_image_size(self['path'])
+            if custom_method != None:
+                custom_method(self)
                 
-            self['width'] = width
-            self['height'] = height
             
             self['mhtml'] = self.mhtml()
             self.encoded = True
@@ -78,7 +78,9 @@ class ImageIndex(object):
         ('jpg', 'image/jpg'),
         ('png', 'image/png')
     ]
-
+    
+    encode_methods = []
+    
     def __init__(self):
         '''
         '''
@@ -91,10 +93,17 @@ class ImageIndex(object):
                     img_path = path + os.sep + filename
                     img = Image(path=img_path, mime=mime, filename=filename)
                     self.images.append(img)
+
+    def add_encode_method(self, method):
+        self.encode_methods.append(method)
         
     def encode(self, url_path):
+        def __custom_encode(image):
+            for m in self.encode_methods:
+                m(image)
+        
         for image in self.images:
-            image.encode()
+            image.encode(custom_method=__custom_encode)
         return (encoded_doc_template % {
                                      'css_items': '\n'.join(image.css() for image in self.images),
                                      }) % {'url_path': url_path, }
@@ -120,6 +129,8 @@ def test_server(img_index):
     import BaseHTTPServer
     import zlib
     import socket
+    
+    img_index.add_encode_method(get_image_size)
     
     server_ip = socket.gethostbyname(socket.gethostname())
     server_url = "http://" + server_ip + ":8000/"
