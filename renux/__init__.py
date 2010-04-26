@@ -109,6 +109,13 @@ def fix_newline(string):
             out_string.write(string[i])
     return out_string.getvalue()
 
+def save_imageindex(img_index, filename, url_path):
+    encoded_imgs = img_index.encode(url_path)
+    encoded_imgs = fix_newline(encoded_imgs)
+    file = open(filename, "wb")
+    file.write(encoded_imgs)
+    file.close()
+
 def test_server(img_index):
     import BaseHTTPServer
     import zlib
