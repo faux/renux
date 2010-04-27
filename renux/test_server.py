@@ -1,10 +1,9 @@
-from ImageIndex import get_image_size, fix_newline
+import BaseHTTPServer
+import zlib
+import socket
+from renux.ImageIndex import get_image_size, fix_newline
 
 def start(img_index):
-    import BaseHTTPServer
-    import zlib
-    import socket
-    
     img_index.add_encode_method(get_image_size)
     
     server_ip = socket.gethostbyname(socket.gethostname())

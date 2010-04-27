@@ -1,2 +1,1 @@
-import test_server
-import ImageIndex
+from renux import ImageIndex, test_server
