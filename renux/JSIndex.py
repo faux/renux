@@ -59,7 +59,7 @@ class JSCompiler(object):
             'jar_file': 'compiler.jar',
             'js_input_param': '--js',
             'js_output_param': '--js_output_file',
-            'optional_params': '--compilation_level ADVANCED_OPTIMIZATIONS',
+            'optional_params': '--compilation_level SIMPLE_OPTIMIZATIONS',
     #WHITESPACE_ONLY
     #SIMPLE_OPTIMIZATIONS
     #ADVANCED_OPTIMIZATIONS
