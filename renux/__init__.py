@@ -1,1 +1,1 @@
-from renux import ImageIndex, test_server
+from JSIndex import JSCompiler, JSIndex
